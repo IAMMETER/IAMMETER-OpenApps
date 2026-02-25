@@ -67,12 +67,30 @@ for (const mf of manifestFiles) {
   }
 
   // 4) hosted runtime contract check (extra safety)
-  if (manifest.runtime === "hosted") {
-    const gw = manifest.hosted?.gateway;
-    if (!gw || gw.health !== "/health" || gw.wsPath !== "/ws" || gw.apiBase !== "/api") {
-      fail(`Hosted gateway contract must be fixed to /health /ws /api: ${mf}`);
-    }
+// 5) hosted runtime file structure check
+if (manifest.runtime === "hosted") {
+  const backendDir = path.join(appDir, "backend");
+  const frontendDir = path.join(appDir, "frontend");
+
+  const dockerfilePath = path.join(backendDir, "Dockerfile");
+  const serverPath = path.join(backendDir, "src", "server.js");
+
+  if (!fs.existsSync(backendDir)) {
+    fail(`Hosted app missing backend directory: ${mf}`);
   }
+
+  if (!fs.existsSync(dockerfilePath)) {
+    fail(`Hosted app missing backend/Dockerfile: ${mf}`);
+  }
+
+  if (!fs.existsSync(serverPath)) {
+    fail(`Hosted app missing backend/src/server.js: ${mf}`);
+  }
+
+  if (!fs.existsSync(frontendDir)) {
+    fail(`Hosted app missing frontend directory: ${mf}`);
+  }
+}
 
   okCount += 1;
 }
