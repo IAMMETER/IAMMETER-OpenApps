@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-02-25T08:48:58.512Z",
+  "total": 2,
+  "apps": [
+    {
+      "id": "example",
+      "name": "Example App",
+      "description": "A minimal example app for validating the pipeline.",
+      "author": "IAMMETER",
+      "version": "0.1.0",
+      "tags": [
+        "example"
+      ],
+      "runtime": "static",
+      "entry": "apps/example/frontend/index.html",
+      "hostedUrl": null,
+      "hostedStatus": null
+    },
+    {
+      "id": "template-hosted",
+      "name": "Hosted App Template",
+      "description": "A hosted app template with backend /health and /ws endpoints.",
+      "author": "IAMMETER",
+      "version": "0.1.0",
+      "tags": [
+        "template",
+        "hosted"
+      ],
+      "runtime": "hosted",
+      "entry": "apps/template-hosted/frontend/index.html",
+      "hostedUrl": null,
+      "hostedStatus": "pending"
+    }
+  ]
+}

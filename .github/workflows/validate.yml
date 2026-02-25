@@ -5,9 +5,13 @@ on:
   push:
     branches: ["main"]
 
+permissions:
+  contents: write   # 允许自动提交 index.json
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +26,18 @@ jobs:
       - name: Validate manifests
         run: npm run validate:manifests
 
+      - name: Generate apps index
+        run: npm run generate:app-index
+
+      - name: Commit apps index (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add apps/index.json
+          git commit -m "chore: update apps index" || echo "No changes"
+          git push
+
   docker-build-hosted:
     runs-on: ubuntu-latest
     needs: validate
@@ -29,14 +45,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Find hosted apps
         id: find_hosted
         run: |
           echo "Scanning hosted apps..."
           HOSTED_DIRS=$(jq -r '
-            . as $manifest
-            | select(.runtime=="hosted")
-            | input_filename
+            select(.runtime=="hosted") | input_filename
           ' apps/*/manifest.json | xargs -n1 dirname || true)
 
           echo "HOSTED_DIRS=$HOSTED_DIRS"
