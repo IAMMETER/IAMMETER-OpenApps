@@ -1,0 +1,31 @@
+{
+  "id": "template-hosted",
+  "name": "Hosted App Template",
+  "author": "IAMMETER",
+  "description": "A hosted app template with backend /health and /ws endpoints.",
+  "tags": ["template", "hosted"],
+  "version": "0.1.0",
+  "runtime": "hosted",
+  "entry": "frontend/index.html",
+  "configSchema": [
+    { "key": "sn", "label": "SN", "type": "text", "required": true, "placeholder": "e.g. 12C3..." },
+    { "key": "token", "label": "Token", "type": "password", "required": true, "placeholder": "IAMMETER API token" }
+  ],
+  "links": {
+    "source": "https://github.com/IAMMETER/iammeter",
+    "docs": "apps/template-hosted/README.md"
+  },
+  "demo": {
+    "hasMock": true,
+    "mockNote": "If no config is provided, the frontend will show mock data."
+  },
+  "hosted": {
+    "status": "pending",
+    "hostedUrl": "",
+    "gateway": {
+      "health": "/health",
+      "wsPath": "/ws",
+      "apiBase": "/api"
+    }
+  }
+}
