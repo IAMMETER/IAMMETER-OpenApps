@@ -1,8 +1,14 @@
 # IAMMETER Industrial Monitor Dashboard
 
-![image-20260228150300950](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260228150300950.png)
+You can have a try by click directly here
 
-![image-20260228150331350](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260228150331350.png)
+https://iammeter.github.io/IAMMETER-OpenApps/apps/example/frontend/index.html
+
+
+
+![image-20260228155433043](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260228155433043.png)
+
+
 
 A lightweight, single-file web application that reads real-time data from an IAMMETER energy meter and displays it in an industrial-style digital dashboard.
 
