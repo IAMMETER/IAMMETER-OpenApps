@@ -23,6 +23,10 @@ async function main() {
       tags: manifest.tags,
       runtime: manifest.runtime,
       entry: `apps/${manifest.id}/${manifest.entry}`,
+        // ⭐ 新增这两行
+      source: manifest.links?.source || null,
+      docs: manifest.links?.docs || null,
+
       hostedUrl: manifest.hosted?.hostedUrl || null,
       hostedStatus: manifest.hosted?.status || null
     });

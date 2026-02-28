@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-25T08:48:58.512Z",
+  "generatedAt": "2026-02-26T07:58:39.330Z",
   "total": 2,
   "apps": [
     {
@@ -13,6 +13,8 @@
       ],
       "runtime": "static",
       "entry": "apps/example/frontend/index.html",
+      "source": "https://github.com/IAMMETER/iammeter",
+      "docs": "apps/example/README.md",
       "hostedUrl": null,
       "hostedStatus": null
     },
@@ -28,6 +30,8 @@
       ],
       "runtime": "hosted",
       "entry": "apps/template-hosted/frontend/index.html",
+      "source": "https://github.com/IAMMETER/iammeter",
+      "docs": "apps/template-hosted/README.md",
       "hostedUrl": null,
       "hostedStatus": "pending"
     }

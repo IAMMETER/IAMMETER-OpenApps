@@ -1,5 +1,673 @@
 <!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>Example</title></head>
-  <body>Example App</body>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IAMMETER Industrial Monitor Dashboard</title>
+<link rel="icon" href="" />
+
+<style>
+:root{
+  --bg:#0b1220;
+  --text:#e6eefc;
+  --muted:#9fb3d7;
+  --good:#2fe1a7;
+  --bad:#ff5a7a;
+  --warn:#ffcc66;
+  --shadow: 0 18px 45px rgba(0,0,0,.35);
+  --radius: 16px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  background:
+    radial-gradient(1200px 600px at 30% -10%, rgba(47,225,167,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(93,147,255,.20), transparent 55%),
+    var(--bg);
+  color:var(--text);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:22px}
+.sub{color:var(--muted);font-size:12px;margin-top:6px}
+code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.08)}
+
+/* ===== Header: icon at the left of the custom title (in-page) ===== */
+.titleRow{display:flex;align-items:center;gap:12px;min-width:0}
+#pageIcon{
+  width:36px;height:36px;object-fit:contain;flex:0 0 auto;
+  display:none; /* will be forced to inline-block by JS when valid */
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,.35));
+}
+#pageTitle{
+  margin:0;
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:.5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-width:0;
+}
+/* B: small screens clamp to 2 lines */
+@media(max-width:720px){
+  #pageTitle{
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+}
+
+/* ===== Tabs ===== */
+.tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.tab{
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(10,18,35,.6);
+  color:var(--text);
+  cursor:pointer;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.tab.active{
+  background:linear-gradient(180deg,#2fe1a7,#1aa982);
+  color:#04130f;
+  border-color:rgba(47,225,167,.55);
+}
+
+/* ===== Panel ===== */
+.panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+
+/* ===== Status bar ===== */
+.statusbar{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  margin-bottom:12px;color:var(--muted);font-size:12px;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.10);
+  background: rgba(10,18,35,.6);
+}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 3px rgba(255,204,102,.15)}
+.dot.good{background:var(--good);box-shadow:0 0 0 3px rgba(47,225,167,.18)}
+.dot.bad{background:var(--bad);box-shadow:0 0 0 3px rgba(255,90,122,.18)}
+
+/* ===== Dashboard grid ===== */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--radius);
+  padding:16px;
+  position:relative;
+  overflow:hidden;
+}
+.card:before{
+  content:"";
+  position:absolute; inset:-2px -2px auto -2px; height:2px;
+  background: linear-gradient(90deg, transparent, rgba(93,147,255,.9), rgba(47,225,167,.9), transparent);
+  opacity:.45;
+}
+.k{color:var(--muted);font-size:13px}
+.v{font-size:42px;font-weight:950;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.unit{font-size:14px;color:var(--muted);margin-left:6px;font-weight:850}
+.mini{margin-top:8px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.blink{ animation: blink .25s ease-in-out; }
+@keyframes blink{ from{filter: brightness(1.4)} to{filter: brightness(1)} }
+
+/* ===== Settings ===== */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+@media(max-width:700px){.form{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-size:12px;color:var(--muted)}
+input{
+  height:40px;padding:0 12px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(10,18,35,.8);color:var(--text);outline:none;
+}
+input:focus{border-color: rgba(47,225,167,.55); box-shadow: 0 0 0 3px rgba(47,225,167,.15)}
+.row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.btn{
+  height:40px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.10);
+  background:rgba(16,29,55,.85);color:var(--text);cursor:pointer;font-weight:850;letter-spacing:.3px;
+}
+.btn.primary{background:linear-gradient(180deg,#2fe1a7,#1aa982);color:#04130f;border-color:rgba(47,225,167,.55)}
+.help{margin-top:12px;color:rgba(159,179,215,.85);font-size:12px;line-height:1.5}
+.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+.tiny{font-size:11px}
+.previewRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.iconPreview{
+  width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(10,18,35,.6);display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.iconPreview img{width:100%;height:100%;object-fit:contain}
+.hintBox{
+  margin-top:6px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(10,18,35,.45);color:rgba(159,179,215,.9);font-size:12px;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="titleRow">
+    <img id="pageIcon" alt="icon" />
+    <h1 id="pageTitle">IAMMETER Industrial Monitor Dashboard</h1>
+  </div>
+  <div class="sub" id="pageSub">
+    Polling <code>/api/monitorjson</code> from the specified meter IP and refreshing 7 electrical parameters.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabDashboard">Dashboard</button>
+    <button class="tab" id="tabSettings">Settings</button>
+  </div>
+
+  <section id="viewDashboard" class="panel">
+    <div class="statusbar">
+      <div class="pill"><span id="dot" class="dot"></span><span id="state">Stopped</span></div>
+      <div class="pill">URL: <span id="urlText" class="mono">-</span></div>
+      <div class="pill">Latency: <span id="latency">-</span></div>
+      <div class="pill">Updated: <span id="updatedAt">-</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">Voltage</div><div class="v"><span id="voltage">--</span><span class="unit">V</span></div><div class="mini"><span>Hint</span><span>~ 220–240V</span></div></div>
+      <div class="card"><div class="k">Current</div><div class="v"><span id="current">--</span><span class="unit">A</span></div><div class="mini"><span>Load</span><span id="iHint">-</span></div></div>
+      <div class="card"><div class="k">Power</div><div class="v"><span id="power">--</span><span class="unit">W</span></div><div class="mini"><span>Equivalent</span><span id="pHint">-</span></div></div>
+      <div class="card"><div class="k">Import Energy</div><div class="v"><span id="import">--</span><span class="unit">kWh</span></div><div class="mini"><span>Type</span><span id="impHint">-</span></div></div>
+      <div class="card"><div class="k">Export Energy</div><div class="v"><span id="export">--</span><span class="unit">kWh</span></div><div class="mini"><span>Type</span><span id="expHint">-</span></div></div>
+      <div class="card"><div class="k">Frequency</div><div class="v"><span id="freq">--</span><span class="unit">Hz</span></div><div class="mini"><span>Grid</span><span>50Hz</span></div></div>
+      <div class="card" style="grid-column:1/-1"><div class="k">Power Factor (PF)</div><div class="v"><span id="pf">--</span></div><div class="mini"><span>Hint</span><span id="pfHint">-</span></div></div>
+    </div>
+  </section>
+
+  <section id="viewSettings" class="panel" style="display:none;margin-top:14px;">
+    <div class="form">
+      <div class="field" style="grid-column:1/-1">
+        <label>Dashboard Title</label>
+        <input id="titleInput" placeholder="e.g., IAMMETER Industrial Monitor Dashboard">
+      </div>
+
+      <div class="field" style="grid-column:1/-1">
+        <label>Icon (Path or Base64 DataURL)</label>
+        <input id="iconInput" placeholder="icon.jpg OR data:image/...base64,...">
+        <div class="sub">Tip: upload below to convert into 64×64 base64 (offline <code>file://</code> friendly).</div>
+
+        <div class="previewRow">
+          <div class="iconPreview"><img id="iconPreviewImg" alt="preview"></div>
+          <div>
+            <div class="sub tiny">Current Icon Size (approx)</div>
+            <div id="iconSizeInfo" class="mono tiny" style="color:rgba(159,179,215,.9)">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="grid-column:1/-1">
+        <label>Upload Icon (convert to 64×64 & compress for localStorage)</label>
+        <input type="file" id="iconFileInput" accept="image/*">
+        <div class="hintBox">
+          Limits:
+          <ul style="margin:6px 0 0 18px; padding:0">
+            <li>Max upload file size: <span class="mono" id="maxUploadKb">512</span> KB</li>
+            <li>Max saved icon (base64) size: <span class="mono" id="maxSavedKb">45</span> KB</li>
+            <li>Output: <span class="mono">64×64</span>, format: <span class="mono">WebP</span> (fallback PNG)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Meter IP / Host</label>
+        <input id="ip" placeholder="e.g., 192.168.31.26 or 192.168.31.26:80">
+      </div>
+
+      <div class="field">
+        <label>Refresh Interval (ms)</label>
+        <input id="interval" type="number" min="200" step="100">
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="applyBtn">Apply</button>
+      <button class="btn primary" id="startBtn">Start</button>
+      <button class="btn" id="stopBtn">Stop</button>
+    </div>
+
+    <div class="help">
+      Notes:
+      <ul style="margin:6px 0 0 18px; padding:0">
+        <li>Base64 icon works in both HTTP and <code>file://</code> mode.</li>
+        <li>For stable networking, open via HTTP (e.g., <code>python -m http.server</code>).</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================
+   Helpers & constants
+====================== */
+const $ = (id) => document.getElementById(id);
+const STORAGE_KEY = "iammeter_monitor_settings_v6";
+let timer = null;
+
+/* Icon constraints */
+const ICON_SIZE = 64;
+const ICON_MAX_FILE_BYTES = 512 * 1024;
+const ICON_MAX_DATAURL_BYTES = 45 * 1024;
+
+$("maxUploadKb").textContent = Math.round(ICON_MAX_FILE_BYTES / 1024);
+$("maxSavedKb").textContent  = Math.round(ICON_MAX_DATAURL_BYTES / 1024);
+
+function dataUrlBytes(dataUrl) {
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return dataUrl.length;
+  const b64 = dataUrl.slice(comma + 1);
+  const padding = (b64.endsWith("==") ? 2 : (b64.endsWith("=") ? 1 : 0));
+  return Math.floor(b64.length * 3 / 4) - padding;
+}
+
+function canvasSupportsType(mime) {
+  const c = document.createElement("canvas");
+  try {
+    const url = c.toDataURL(mime);
+    return url.startsWith("data:" + mime);
+  } catch { return false; }
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function drawToCanvas(img, size) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, size, size);
+
+  const scale = Math.min(size / img.width, size / img.height);
+  const w = img.width * scale;
+  const h = img.height * scale;
+  const x = (size - w) / 2;
+  const y = (size - h) / 2;
+  ctx.drawImage(img, x, y, w, h);
+  return canvas;
+}
+
+function encodeIcon(canvas) {
+  const preferWebp = canvasSupportsType("image/webp");
+  const mime = preferWebp ? "image/webp" : "image/png";
+
+  if (mime === "image/png") {
+    const url = canvas.toDataURL("image/png");
+    return { dataUrl: url, mime, quality: null, bytes: dataUrlBytes(url) };
+  }
+
+  const qualities = [0.80, 0.70, 0.62, 0.55, 0.50, 0.45];
+  let best = null;
+  for (const q of qualities) {
+    const url = canvas.toDataURL("image/webp", q);
+    const bytes = dataUrlBytes(url);
+    best = { dataUrl: url, mime, quality: q, bytes };
+    if (bytes <= ICON_MAX_DATAURL_BYTES) break;
+  }
+  return best;
+}
+
+/* ======================
+   UI elements
+====================== */
+const tabDashboard = $("tabDashboard");
+const tabSettings  = $("tabSettings");
+const viewDashboard = $("viewDashboard");
+const viewSettings  = $("viewSettings");
+
+const pageTitle = $("pageTitle");
+const pageIcon  = $("pageIcon");
+
+const titleInput = $("titleInput");
+const iconInput  = $("iconInput");
+const iconFileInput = $("iconFileInput");
+const iconPreviewImg = $("iconPreviewImg");
+const iconSizeInfo = $("iconSizeInfo");
+
+const ipEl = $("ip");
+const intervalEl = $("interval");
+const applyBtn = $("applyBtn");
+const startBtn = $("startBtn");
+const stopBtn  = $("stopBtn");
+
+const dot = $("dot");
+const state = $("state");
+const urlText = $("urlText");
+const latencyEl = $("latency");
+const updatedAtEl = $("updatedAt");
+
+const voltageEl = $("voltage");
+const currentEl = $("current");
+const powerEl   = $("power");
+const importEl  = $("import");
+const exportEl  = $("export");
+const freqEl    = $("freq");
+const pfEl      = $("pf");
+
+const iHint = $("iHint");
+const pHint = $("pHint");
+const impHint = $("impHint");
+const expHint = $("expHint");
+const pfHint = $("pfHint");
+
+/* ======================
+   Basic UI helpers
+====================== */
+function setStatus(kind, text) {
+  dot.className = "dot" + (kind ? (" " + kind) : "");
+  state.textContent = text;
+}
+
+function fmt(num, digits = 2) {
+  if (num === null || num === undefined || Number.isNaN(num)) return "--";
+  return Number(num).toFixed(digits);
+}
+
+function blink(el) {
+  el.classList.remove("blink");
+  void el.offsetWidth;
+  el.classList.add("blink");
+}
+
+function sanitizeHost(raw) {
+  const s = (raw || "").trim();
+  if (!s) return "";
+  return s.replace(/\/+$/, "");
+}
+
+function buildUrl() {
+  const host = sanitizeHost(ipEl.value);
+  if (!host) return "";
+  if (host.startsWith("http://") || host.startsWith("https://")) return host + "/api/monitorjson";
+  return "http://" + host + "/api/monitorjson";
+}
+
+function resolveUrl(path) {
+  const p = (path || "").trim();
+  if (!p) return "";
+  if (p.startsWith("data:image/")) return p;
+  try { return new URL(p, window.location.href).toString(); }
+  catch { return p; }
+}
+
+function setFavicon(absIconUrl) {
+  if (!absIconUrl) return;
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.href = absIconUrl;
+}
+
+/* ======================
+   Apply icon (FIXED: force display)
+====================== */
+function applyIcon(value){
+  const abs = resolveUrl(value);
+  const bytes = abs ? dataUrlBytes(abs) : 0;
+
+  if (!abs) {
+    pageIcon.style.display = "none";
+    iconPreviewImg.removeAttribute("src");
+    iconSizeInfo.textContent = "-";
+    return;
+  }
+
+  // Settings preview
+  iconPreviewImg.onerror = () => iconPreviewImg.removeAttribute("src");
+  iconPreviewImg.src = abs;
+
+  // In-page title icon: MUST override CSS display:none
+  pageIcon.style.display = "inline-block";
+  pageIcon.onerror = () => { pageIcon.style.display = "none"; };
+  pageIcon.src = abs;
+
+  // Favicon
+  setFavicon(abs);
+
+  // Size info
+  if (abs.startsWith("data:image/")) {
+    iconSizeInfo.textContent = `${Math.round(bytes/1024)} KB (base64)`;
+  } else {
+    iconSizeInfo.textContent = `Path/URL: ${abs}`;
+  }
+}
+
+/* ======================
+   Settings persistence
+====================== */
+function saveSettings() {
+  const settings = {
+    title: (titleInput.value || "").trim() || "IAMMETER Industrial Monitor Dashboard",
+    icon: (iconInput.value || "").trim(),
+    host: sanitizeHost(ipEl.value),
+    interval: Math.max(200, Number(intervalEl.value) || 2000)
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  return settings;
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function applySettingsToUI(settings) {
+  titleInput.value = settings.title || "IAMMETER Industrial Monitor Dashboard";
+  iconInput.value  = settings.icon || "icon.jpg";
+  ipEl.value       = settings.host || "192.168.31.26";
+  intervalEl.value = settings.interval || 2000;
+
+  pageTitle.textContent = titleInput.value;
+  document.title = titleInput.value;
+
+  applyIcon(iconInput.value);
+  urlText.textContent = buildUrl() || "-";
+}
+
+/* ======================
+   Polling logic
+====================== */
+function updateUI(payload) {
+  const d = payload?.Data;
+  if (!Array.isArray(d) || d.length < 7) throw new Error("Unexpected JSON format: missing Data[0..6]");
+
+  const v = Number(d[0]);
+  const i = Number(d[1]);
+  const p = Number(d[2]);
+  const imp = Number(d[3]);
+  const exp = Number(d[4]);
+  const f = Number(d[5]);
+  const pf = Number(d[6]);
+
+  voltageEl.textContent = fmt(v, 1);
+  currentEl.textContent = fmt(i, 2);
+  powerEl.textContent   = fmt(p, 0);
+  importEl.textContent  = fmt(imp, 2);
+  exportEl.textContent  = fmt(exp, 2);
+  freqEl.textContent    = fmt(f, 2);
+  pfEl.textContent      = fmt(pf, 2);
+
+  blink(voltageEl); blink(currentEl); blink(powerEl);
+  blink(importEl); blink(exportEl); blink(freqEl); blink(pfEl);
+
+  iHint.textContent = (i < 0.1) ? "Near idle" : (i < 5 ? "Light" : (i < 15 ? "Medium" : "Heavy"));
+  pHint.textContent = (p >= 1000) ? (fmt(p/1000, 2) + " kW") : (fmt(p, 0) + " W");
+  impHint.textContent = "Cumulative";
+  expHint.textContent = "Cumulative";
+  pfHint.textContent = (pf > 0.95) ? "Good" : (pf > 0.85 ? "Acceptable" : "Low (check load type)");
+}
+
+async function pollOnce() {
+  const url = buildUrl();
+  urlText.textContent = url || "-";
+
+  if (!url) {
+    setStatus("warn", "Please configure Meter IP in Settings");
+    return;
+  }
+
+  const t0 = performance.now();
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    latencyEl.textContent = Math.round(performance.now() - t0) + " ms";
+    if (!r.ok) throw new Error("HTTP " + r.status);
+
+    const data = await r.json();
+    updateUI(data);
+
+    updatedAtEl.textContent = new Date().toLocaleString();
+    setStatus("good", "Online (polling)");
+  } catch (e) {
+    latencyEl.textContent = "-";
+    updatedAtEl.textContent = new Date().toLocaleString();
+    setStatus("bad", "Offline / request failed");
+    console.error(e);
+  }
+}
+
+function startPolling() {
+  const settings = saveSettings();
+  applySettingsToUI(settings);
+
+  if (timer) clearInterval(timer);
+  setStatus("warn", "Starting…");
+  pollOnce();
+  timer = setInterval(pollOnce, settings.interval);
+}
+
+function stopPolling() {
+  if (timer) clearInterval(timer);
+  timer = null;
+  setStatus("warn", "Stopped");
+}
+
+/* ======================
+   Tabs & buttons
+====================== */
+function showTab(which) {
+  const isDash = which === "dashboard";
+  viewDashboard.style.display = isDash ? "" : "none";
+  viewSettings.style.display  = isDash ? "none" : "";
+  tabDashboard.classList.toggle("active", isDash);
+  tabSettings.classList.toggle("active", !isDash);
+  if (!isDash) urlText.textContent = buildUrl() || "-";
+}
+
+tabDashboard.addEventListener("click", () => showTab("dashboard"));
+tabSettings.addEventListener("click",  () => showTab("settings"));
+
+applyBtn.addEventListener("click", () => {
+  const settings = saveSettings();
+  applySettingsToUI(settings);
+  setStatus("warn", "Applied (not started)");
+});
+
+startBtn.addEventListener("click", startPolling);
+stopBtn.addEventListener("click", stopPolling);
+
+iconInput.addEventListener("input", () => applyIcon(iconInput.value));
+
+[titleInput, iconInput, ipEl, intervalEl].forEach(el => {
+  el.addEventListener("keydown", (e) => { if (e.key === "Enter") startPolling(); });
+});
+
+/* ======================
+   Icon upload: size limit + compression + storage optimization
+====================== */
+function saveBase64Icon(dataUrl) {
+  iconInput.value = dataUrl;
+  const s = saveSettings();
+  s.icon = dataUrl;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  applyIcon(dataUrl);
+}
+
+iconFileInput.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > ICON_MAX_FILE_BYTES) {
+    alert(`Icon file too large. Max is ${Math.round(ICON_MAX_FILE_BYTES/1024)} KB.`);
+    e.target.value = "";
+    return;
+  }
+
+  try {
+    const fileDataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+
+    const img = await loadImage(fileDataUrl);
+    const canvas = drawToCanvas(img, ICON_SIZE);
+    const encoded = encodeIcon(canvas);
+
+    if (encoded.bytes > ICON_MAX_DATAURL_BYTES) {
+      alert(`Icon is still too large after compression (~${Math.round(encoded.bytes/1024)} KB). Please use a simpler image.`);
+      e.target.value = "";
+      return;
+    }
+
+    saveBase64Icon(encoded.dataUrl);
+    console.log("Icon saved:", encoded);
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to process icon. Please try another image.");
+  } finally {
+    e.target.value = "";
+  }
+});
+
+/* ======================
+   Init
+====================== */
+const defaults = {
+  title: "IAMMETER Industrial Monitor Dashboard",
+  icon: "",                 // empty by default; user can upload
+  host: "192.168.31.26",
+  interval: 2000
+};
+const saved = loadSettings() || defaults;
+applySettingsToUI(saved);
+setStatus("warn", "Stopped");
+</script>
+
+</body>
 </html>
