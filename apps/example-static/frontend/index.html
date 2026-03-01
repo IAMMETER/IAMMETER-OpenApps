@@ -120,9 +120,14 @@ code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:8px;border:1
   opacity:.45;
 }
 .k{color:var(--muted);font-size:13px}
-.v{font-size:42px;font-weight:950;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.v{
+  font-size:42px;font-weight:950;margin-top:8px;
+  font-variant-numeric:tabular-nums;letter-spacing:1px;
+  line-height:1.05;
+}
+.v.small{font-size:32px}
 .unit{font-size:14px;color:var(--muted);margin-left:6px;font-weight:850}
-.mini{margin-top:8px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.mini{margin-top:8px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
 .blink{ animation: blink .25s ease-in-out; }
 @keyframes blink{ from{filter: brightness(1.4)} to{filter: brightness(1)} }
 
@@ -167,7 +172,8 @@ input:focus{border-color: rgba(47,225,167,.55); box-shadow: 0 0 0 3px rgba(47,22
     <h1 id="pageTitle">IAMMETER Industrial Monitor Dashboard</h1>
   </div>
   <div class="sub" id="pageSub">
-    Polling <code>/api/monitorjson</code> from the specified meter IP and refreshing 7 electrical parameters.
+    Polling <code>/api/monitorjson</code> from the specified meter IP and refreshing electrical parameters.
+    <span id="phaseMode" class="mono">[Mode: -]</span>
   </div>
 
   <div class="tabs">
@@ -184,13 +190,47 @@ input:focus{border-color: rgba(47,225,167,.55); box-shadow: 0 0 0 3px rgba(47,22
     </div>
 
     <div class="grid">
-      <div class="card"><div class="k">Voltage</div><div class="v"><span id="voltage">--</span><span class="unit">V</span></div><div class="mini"><span>Hint</span><span>~ 220–240V</span></div></div>
-      <div class="card"><div class="k">Current</div><div class="v"><span id="current">--</span><span class="unit">A</span></div><div class="mini"><span>Load</span><span id="iHint">-</span></div></div>
-      <div class="card"><div class="k">Power</div><div class="v"><span id="power">--</span><span class="unit">W</span></div><div class="mini"><span>Equivalent</span><span id="pHint">-</span></div></div>
-      <div class="card"><div class="k">Import Energy</div><div class="v"><span id="import">--</span><span class="unit">kWh</span></div><div class="mini"><span>Type</span><span id="impHint">-</span></div></div>
-      <div class="card"><div class="k">Export Energy</div><div class="v"><span id="export">--</span><span class="unit">kWh</span></div><div class="mini"><span>Type</span><span id="expHint">-</span></div></div>
-      <div class="card"><div class="k">Frequency</div><div class="v"><span id="freq">--</span><span class="unit">Hz</span></div><div class="mini"><span>Grid</span><span>50Hz</span></div></div>
-      <div class="card" style="grid-column:1/-1"><div class="k">Power Factor (PF)</div><div class="v"><span id="pf">--</span></div><div class="mini"><span>Hint</span><span id="pfHint">-</span></div></div>
+      <div class="card">
+        <div class="k" id="lblVoltage">Voltage</div>
+        <div class="v"><span id="voltage">--</span><span class="unit">V</span></div>
+        <div class="mini"><span id="voltageHintL">Hint</span><span id="voltageHintR">~ 220–240V</span></div>
+      </div>
+
+      <div class="card">
+        <div class="k" id="lblCurrent">Current</div>
+        <div class="v"><span id="current">--</span><span class="unit">A</span></div>
+        <div class="mini"><span id="currentHintL">Load</span><span id="iHint">-</span></div>
+      </div>
+
+      <div class="card">
+        <div class="k" id="lblPower">Power</div>
+        <div class="v"><span id="power">--</span><span class="unit">W</span></div>
+        <div class="mini"><span id="powerHintL">Equivalent</span><span id="pHint">-</span></div>
+      </div>
+
+      <div class="card">
+        <div class="k" id="lblImport">Import Energy</div>
+        <div class="v"><span id="import">--</span><span class="unit">kWh</span></div>
+        <div class="mini"><span id="importHintL">Type</span><span id="impHint">-</span></div>
+      </div>
+
+      <div class="card">
+        <div class="k" id="lblExport">Export Energy</div>
+        <div class="v"><span id="export">--</span><span class="unit">kWh</span></div>
+        <div class="mini"><span id="exportHintL">Type</span><span id="expHint">-</span></div>
+      </div>
+
+      <div class="card">
+        <div class="k" id="lblFreq">Frequency</div>
+        <div class="v"><span id="freq">--</span><span class="unit">Hz</span></div>
+        <div class="mini"><span id="freqHintL">Grid</span><span id="freqHintR">50Hz</span></div>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <div class="k" id="lblPf">Power Factor (PF)</div>
+        <div class="v"><span id="pf">--</span></div>
+        <div class="mini"><span id="pfHintL">Hint</span><span id="pfHint">-</span></div>
+      </div>
     </div>
   </section>
 
@@ -261,7 +301,7 @@ input:focus{border-color: rgba(47,225,167,.55); box-shadow: 0 0 0 3px rgba(47,22
    Helpers & constants
 ====================== */
 const $ = (id) => document.getElementById(id);
-const STORAGE_KEY = "iammeter_monitor_settings_v6";
+const STORAGE_KEY = "iammeter_monitor_settings_v7";
 let timer = null;
 
 /* Icon constraints */
@@ -343,6 +383,7 @@ const viewSettings  = $("viewSettings");
 
 const pageTitle = $("pageTitle");
 const pageIcon  = $("pageIcon");
+const phaseModeEl = $("phaseMode");
 
 const titleInput = $("titleInput");
 const iconInput  = $("iconInput");
@@ -376,6 +417,15 @@ const impHint = $("impHint");
 const expHint = $("expHint");
 const pfHint = $("pfHint");
 
+/* labels */
+const lblVoltage = $("lblVoltage");
+const lblCurrent = $("lblCurrent");
+const lblPower   = $("lblPower");
+const lblImport  = $("lblImport");
+const lblExport  = $("lblExport");
+const lblFreq    = $("lblFreq");
+const lblPf      = $("lblPf");
+
 /* ======================
    Basic UI helpers
 ====================== */
@@ -393,6 +443,13 @@ function blink(el) {
   el.classList.remove("blink");
   void el.offsetWidth;
   el.classList.add("blink");
+}
+
+function setBigText(el, text) {
+  el.textContent = text;
+  // reduce font size if long (3-phase "a / b / c")
+  const parent = el.closest(".v");
+  if (parent) parent.classList.toggle("small", String(text).length > 10);
 }
 
 function sanitizeHost(raw) {
@@ -428,7 +485,7 @@ function setFavicon(absIconUrl) {
 }
 
 /* ======================
-   Apply icon (FIXED: force display)
+   Apply icon
 ====================== */
 function applyIcon(value){
   const abs = resolveUrl(value);
@@ -441,19 +498,15 @@ function applyIcon(value){
     return;
   }
 
-  // Settings preview
   iconPreviewImg.onerror = () => iconPreviewImg.removeAttribute("src");
   iconPreviewImg.src = abs;
 
-  // In-page title icon: MUST override CSS display:none
   pageIcon.style.display = "inline-block";
   pageIcon.onerror = () => { pageIcon.style.display = "none"; };
   pageIcon.src = abs;
 
-  // Favicon
   setFavicon(abs);
 
-  // Size info
   if (abs.startsWith("data:image/")) {
     iconSizeInfo.textContent = `${Math.round(bytes/1024)} KB (base64)`;
   } else {
@@ -499,36 +552,135 @@ function applySettingsToUI(settings) {
 }
 
 /* ======================
+   Detect / normalize payload
+====================== */
+function is3Phase(payload) {
+  return Array.isArray(payload?.Datas) && payload.Datas.length >= 3 && Array.isArray(payload.Datas[0]);
+}
+
+function normalizeSingle(d) {
+  if (!Array.isArray(d) || d.length < 7) throw new Error("Unexpected JSON format: Data must be [V,I,P,Imp,Exp,F,PF]");
+  return {
+    mode: "single",
+    V: Number(d[0]),
+    I: Number(d[1]),
+    P: Number(d[2]),
+    Imp: Number(d[3]),
+    Exp: Number(d[4]),
+    F: Number(d[5]),
+    PF: Number(d[6])
+  };
+}
+
+function normalizeThree(ds) {
+  if (!Array.isArray(ds) || ds.length < 3) throw new Error("Unexpected JSON format: Datas must have 3 phase arrays");
+  const phases = ds.slice(0, 3).map((arr, idx) => {
+    if (!Array.isArray(arr) || arr.length < 7) throw new Error(`Unexpected JSON format: Datas[${idx}] must be [V,I,P,Imp,Exp,F,PF]`);
+    return {
+      V: Number(arr[0]),
+      I: Number(arr[1]),
+      P: Number(arr[2]),
+      Imp: Number(arr[3]),
+      Exp: Number(arr[4]),
+      F: Number(arr[5]),
+      PF: Number(arr[6]),
+    };
+  });
+
+  const sum = (k) => phases.reduce((a, x) => a + (Number.isFinite(x[k]) ? x[k] : 0), 0);
+  const avg = (k) => sum(k) / phases.length;
+
+  return {
+    mode: "three",
+    phases, // A,B,C
+    totals: {
+      P: sum("P"),
+      Imp: sum("Imp"),
+      Exp: sum("Exp"),
+    },
+    avg: {
+      F: avg("F"),
+      PF: avg("PF"),
+    }
+  };
+}
+
+/* ======================
    Polling logic
 ====================== */
 function updateUI(payload) {
-  const d = payload?.Data;
-  if (!Array.isArray(d) || d.length < 7) throw new Error("Unexpected JSON format: missing Data[0..6]");
+  const mode3 = is3Phase(payload);
 
-  const v = Number(d[0]);
-  const i = Number(d[1]);
-  const p = Number(d[2]);
-  const imp = Number(d[3]);
-  const exp = Number(d[4]);
-  const f = Number(d[5]);
-  const pf = Number(d[6]);
+  if (!mode3) {
+    // ---- Single phase ----
+    const s = normalizeSingle(payload?.Data);
 
-  voltageEl.textContent = fmt(v, 1);
-  currentEl.textContent = fmt(i, 2);
-  powerEl.textContent   = fmt(p, 0);
-  importEl.textContent  = fmt(imp, 2);
-  exportEl.textContent  = fmt(exp, 2);
-  freqEl.textContent    = fmt(f, 2);
-  pfEl.textContent      = fmt(pf, 2);
+    phaseModeEl.textContent = "[Mode: Single-Phase]";
+    lblVoltage.textContent = "Voltage";
+    lblCurrent.textContent = "Current";
+    lblPower.textContent   = "Power";
+    lblImport.textContent  = "Import Energy";
+    lblExport.textContent  = "Export Energy";
+    lblFreq.textContent    = "Frequency";
+    lblPf.textContent      = "Power Factor (PF)";
+
+    setBigText(voltageEl, fmt(s.V, 1));
+    setBigText(currentEl, fmt(s.I, 2));
+    setBigText(powerEl,   fmt(s.P, 0));
+    setBigText(importEl,  fmt(s.Imp, 3));
+    setBigText(exportEl,  fmt(s.Exp, 3));
+    setBigText(freqEl,    fmt(s.F, 2));
+    setBigText(pfEl,      fmt(s.PF, 2));
+
+    blink(voltageEl); blink(currentEl); blink(powerEl);
+    blink(importEl); blink(exportEl); blink(freqEl); blink(pfEl);
+
+    iHint.textContent = (s.I < 0.1) ? "Near idle" : (s.I < 5 ? "Light" : (s.I < 15 ? "Medium" : "Heavy"));
+    pHint.textContent = (s.P >= 1000) ? (fmt(s.P/1000, 2) + " kW") : (fmt(s.P, 0) + " W");
+    impHint.textContent = "Cumulative";
+    expHint.textContent = "Cumulative";
+    pfHint.textContent = (s.PF > 0.95) ? "Good" : (s.PF > 0.85 ? "Acceptable" : "Low (check load type)");
+    return;
+  }
+
+  // ---- Three phase ----
+  const t = normalizeThree(payload.Datas);
+  const A = t.phases[0], B = t.phases[1], C = t.phases[2];
+
+  phaseModeEl.textContent = "[Mode: Three-Phase]";
+  lblVoltage.textContent = "Voltage (A/B/C)";
+  lblCurrent.textContent = "Current (A/B/C)";
+  lblPower.textContent   = "Power (A/B/C)";
+  lblImport.textContent  = "Import Energy (Total)";
+  lblExport.textContent  = "Export Energy (Total)";
+  lblFreq.textContent    = "Frequency (Avg)";
+  lblPf.textContent      = "Power Factor (Avg)";
+
+  // Big numbers: show A/B/C for V/I/P; totals for energy; avg for F/PF
+  setBigText(voltageEl, `${fmt(A.V,1)} / ${fmt(B.V,1)} / ${fmt(C.V,1)}`);
+  setBigText(currentEl, `${fmt(A.I,2)} / ${fmt(B.I,2)} / ${fmt(C.I,2)}`);
+  setBigText(powerEl,   `${fmt(A.P,0)} / ${fmt(B.P,0)} / ${fmt(C.P,0)}`);
+  setBigText(importEl,  fmt(t.totals.Imp, 3));
+  setBigText(exportEl,  fmt(t.totals.Exp, 3));
+  setBigText(freqEl,    fmt(t.avg.F, 2));
+  setBigText(pfEl,      fmt(t.avg.PF, 2));
 
   blink(voltageEl); blink(currentEl); blink(powerEl);
   blink(importEl); blink(exportEl); blink(freqEl); blink(pfEl);
 
-  iHint.textContent = (i < 0.1) ? "Near idle" : (i < 5 ? "Light" : (i < 15 ? "Medium" : "Heavy"));
-  pHint.textContent = (p >= 1000) ? (fmt(p/1000, 2) + " kW") : (fmt(p, 0) + " W");
-  impHint.textContent = "Cumulative";
-  expHint.textContent = "Cumulative";
-  pfHint.textContent = (pf > 0.95) ? "Good" : (pf > 0.85 ? "Acceptable" : "Low (check load type)");
+  // Hints: show totals / per-phase
+  const iTotal = A.I + B.I + C.I;
+  iHint.textContent = `ΣI=${fmt(iTotal,2)} A`;
+
+  pHint.textContent = `ΣP=${fmt(t.totals.P,0)} W`;
+  impHint.textContent = `A/B/C: ${fmt(A.Imp,3)} / ${fmt(B.Imp,3)} / ${fmt(C.Imp,3)}`;
+  expHint.textContent = `A/B/C: ${fmt(A.Exp,3)} / ${fmt(B.Exp,3)} / ${fmt(C.Exp,3)}`;
+
+  pfHint.textContent =
+    `A/B/C: ${fmt(A.PF,2)} / ${fmt(B.PF,2)} / ${fmt(C.PF,2)}`;
+
+  // Note: frequency usually same; still show average + per-phase if different
+  // (reuse the "Grid 50Hz" right label as-is)
 }
 
 async function pollOnce() {
@@ -660,12 +812,13 @@ iconFileInput.addEventListener("change", async (e) => {
 ====================== */
 const defaults = {
   title: "IAMMETER Industrial Monitor Dashboard",
-  icon: "",                 // empty by default; user can upload
+  icon: "",
   host: "192.168.31.26",
   interval: 2000
 };
 const saved = loadSettings() || defaults;
 applySettingsToUI(saved);
+phaseModeEl.textContent = "[Mode: -]";
 setStatus("warn", "Stopped");
 </script>
 
