@@ -1,5 +1,5 @@
 {
-  "id": "example",
+  "id": "example-static",
   "name": "Example App",
   "author": "IAMMETER",
   "description": "A minimal example app for validating the pipeline.",
