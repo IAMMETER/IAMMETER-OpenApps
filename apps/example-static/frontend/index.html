@@ -289,7 +289,7 @@ input:focus{border-color: rgba(47,225,167,.55); box-shadow: 0 0 0 3px rgba(47,22
       Notes:
       <ul style="margin:6px 0 0 18px; padding:0">
         <li>Base64 icon works in both HTTP and <code>file://</code> mode.</li>
-        <li>For stable networking, open via HTTP (e.g., <code>python -m http.server</code>).</li>
+        <li>The Meter ip must be in the same LAN and is accesible from this browser.</li>
       </ul>
     </div>
   </section>
@@ -748,7 +748,10 @@ applyBtn.addEventListener("click", () => {
   setStatus("warn", "Applied (not started)");
 });
 
-startBtn.addEventListener("click", startPolling);
+startBtn.addEventListener("click", () => {
+  startPolling();
+  showTab("dashboard");
+});
 stopBtn.addEventListener("click", stopPolling);
 
 iconInput.addEventListener("input", () => applyIcon(iconInput.value));
