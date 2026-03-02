@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T03:07:25.214Z",
+  "generatedAt": "2026-03-02T03:15:00.820Z",
   "total": 2,
   "apps": [
     {
@@ -12,7 +12,6 @@
         "example"
       ],
       "runtime": "static",
-      "entry": "apps/example-static/frontend/index.html",
       "entry": "apps/example-static/frontend/index.html",
       "source": "https://github.com/IAMMETER/IAMMETER-OpenApps",
       "docs": "apps/example-static/README.md",
