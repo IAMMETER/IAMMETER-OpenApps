@@ -4,11 +4,15 @@
   "type": "module",
   "scripts": {
     "validate:manifests": "node tools/validate-manifests.mjs",
-    "generate:app-index": "node tools/generate-app-index.mjs"
+    "generate:app-index": "node tools/generate-app-index.mjs",
+    "validate:screenshots": "node tools/validate-screenshots.mjs"
   },
   "devDependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fast-glob": "^3.3.2"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   }
 }

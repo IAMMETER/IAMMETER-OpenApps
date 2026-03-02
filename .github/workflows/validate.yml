@@ -28,7 +28,9 @@ jobs:
 
       - name: Validate manifests
         run: npm run validate:manifests
-        
+      - name: Validate screenshots
+        run: npm run validate:screenshots
+
       - name: Detect hosted app changes
         id: detect_hosted
         run: |
