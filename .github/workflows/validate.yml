@@ -11,6 +11,9 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      has_hosted_change: ${{ steps.detect_hosted.outputs.has_hosted_change }}
+      hosted_dirs: ${{ steps.detect_hosted.outputs.hosted_dirs }}
 
     steps:
       - uses: actions/checkout@v4
@@ -25,37 +28,80 @@ jobs:
 
       - name: Validate manifests
         run: npm run validate:manifests
+        
+      - name: Detect hosted app changes
+        id: detect_hosted
+        run: |
+          set -e
 
+          # Decide diff range for PR vs push
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+
+          echo "Diff range: $BASE..$HEAD"
+
+          CHANGED=$(git diff --name-only "$BASE" "$HEAD" || true)
+          echo "$CHANGED"
+
+          # Find hosted apps impacted:
+          # 1) manifest.json of that app changed AND runtime == hosted
+          # 2) any file under apps/<id>/backend/** changed
+          HOSTED_DIRS=""
+
+          while IFS= read -r f; do
+            # backend changed
+            if echo "$f" | grep -Eq '^apps/[^/]+/backend/'; then
+              d=$(echo "$f" | cut -d/ -f1-2)   # apps/<id>
+              HOSTED_DIRS="$HOSTED_DIRS $d"
+              continue
+            fi
+
+            # manifest changed
+            if echo "$f" | grep -Eq '^apps/[^/]+/manifest\.json$'; then
+              d=$(dirname "$f")                # apps/<id>
+              if jq -e '.runtime=="hosted"' "$f" >/dev/null 2>&1; then
+                HOSTED_DIRS="$HOSTED_DIRS $d"
+              fi
+            fi
+          done <<< "$CHANGED"
+
+          # uniq
+          HOSTED_DIRS=$(echo "$HOSTED_DIRS" | tr ' ' '\n' | sed '/^$/d' | sort -u | tr '\n' ' ' | sed 's/ $//')
+
+          if [ -n "$HOSTED_DIRS" ]; then
+            echo "has_hosted_change=true" >> "$GITHUB_OUTPUT"
+            echo "hosted_dirs=$HOSTED_DIRS" >> "$GITHUB_OUTPUT"
+            echo "Hosted dirs: $HOSTED_DIRS"
+          else
+            echo "has_hosted_change=false" >> "$GITHUB_OUTPUT"
+            echo "hosted_dirs=" >> "$GITHUB_OUTPUT"
+            echo "No hosted changes detected."
+          fi
       - name: Generate apps index
         run: npm run generate:app-index
-
 
 
   docker-build-hosted:
     runs-on: ubuntu-latest
     needs: validate
 
+    # ✅ 只有当本次变更涉及 hosted apps 时才运行这个 job
+    if: needs.validate.outputs.has_hosted_change == 'true'
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Find hosted apps
-        id: find_hosted
+      - name: Build changed hosted apps
         run: |
-          echo "Scanning hosted apps..."
-          HOSTED_DIRS=$(jq -r '
-            select(.runtime=="hosted") | input_filename
-          ' apps/*/manifest.json | xargs -n1 dirname || true)
-
-          echo "HOSTED_DIRS=$HOSTED_DIRS"
-          echo "HOSTED_DIRS=$HOSTED_DIRS" >> $GITHUB_ENV
-
-      - name: Build hosted apps
-        if: env.HOSTED_DIRS != ''
-        run: |
-          for dir in $HOSTED_DIRS; do
+          echo "Building hosted apps changed in this PR/push..."
+          for dir in ${{ needs.validate.outputs.hosted_dirs }}; do
             echo "Building Docker image for $dir/backend ..."
             docker build -t hosted-test-image $dir/backend
           done
