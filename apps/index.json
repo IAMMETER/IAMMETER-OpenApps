@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T03:15:00.820Z",
+  "generatedAt": "2026-03-02T03:42:34.414Z",
   "total": 2,
   "apps": [
     {
@@ -7,9 +7,10 @@
       "name": "Example-static App",
       "description": "A minimal example app for validating the pipeline.",
       "author": "IAMMETER",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "tags": [
-        "example"
+        "example",
+        "static"
       ],
       "runtime": "static",
       "entry": "apps/example-static/frontend/index.html",
