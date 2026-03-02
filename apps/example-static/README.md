@@ -1,180 +1,129 @@
-# IAMMETER Industrial Monitor Dashboard
+- [How to Use This App](#how-to-use-this-app)
+  - [Step 1 – Open Settings](#step-1--open-settings)
+  - [Step 2 – View Real-Time Dashboard](#step-2--view-real-time-dashboard)
+- [About This App](#about-this-app)
+- [How to Run](#how-to-run)
+  - [Option A – Run Directly (No Server Required)](#option-a--run-directly-no-server-required)
+  - [Option B – Host on a Web Server](#option-b--host-on-a-web-server)
+- [Why Static Apps Are Supported](#why-static-apps-are-supported)
 
-You can have a try by click directly here
+
+
+A fully static web application (no backend required) that provides a customizable monitoring dashboard for IAMMETER energy meters.
+
+Users can:
+
+- Customize the **dashboard title**
+- Upload and set a custom **dashboard icon**
+- Configure the meter IP address
+- Adjust the data refresh interval
+- Instantly monitor real-time meter readings
+
+This app demonstrates how easily a personalized monitoring interface can be built on top of IAMMETER’s local API.
+
+# How to Use This App
+
+You can try the live demo here:
 
 https://iammeter.github.io/IAMMETER-OpenApps/apps/example/frontend/index.html
 
+------
 
+## Step 1 – Open Settings
 
-![image-20260228155433043](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260228155433043.png)
+![Dashboard Settings](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260302142504555.png)
 
+1. Click **Settings**
+2. Configure the **Dashboard Title** (displayed at the top of the dashboard)
+3. Upload a custom **Icon**
+   - Recommended: 64×64 px
+   - Maximum size: 512 KB
+4. Enter the **Meter IP address**
+   - The meter must be in the same LAN as your browser
+   - The IP must be directly accessible
+5. Set the **Refresh Interval**
+6. Click **Apply**
+7. Click **Start**
 
+------
 
-A lightweight, single-file web application that reads real-time data from an IAMMETER energy meter and displays it in an industrial-style digital dashboard.
+## Step 2 – View Real-Time Dashboard
+
+The application switches to the dashboard view and begins displaying live data:
+
+![Dashboard View](https://iammeterglobal.oss-accelerate.aliyuncs.com/img/image-20260228155433043.png)
+
+------
+
+# About This App
+
+This lightweight, single-file web application reads real-time data from an IAMMETER energy meter and presents it in an industrial-style digital dashboard.
 
 This project serves as:
 
-- ✅ A **reference example** for the IAMMETER-OpenApps Application Center
-- ✅ A demonstration of how to use the IAMMETER local API (`/api/monitorjson`)
-- ✅ A base template for developers to build and contribute their own IAMMETER-related open-source applications
+- A reference **“Static App” example** for the [IAMMETER Application Center](https://github.com/IAMMETER/IAMMETER-OpenApps)
+- A demonstration of how to use the IAMMETER [local API](https://www.iammeter.com/newsshow/blog-fw-features#51-get-apimonitorjson) (`/api/monitorjson`)
+- A base template for developers to build and contribute their own IAMMETER-related open-source applications
+
+The design philosophy is simplicity:
+
+- Single HTML file
+- Direct HTTP API calls
+- No backend infrastructure required
+- Fully self-contained
+
+It demonstrates how easy it is to build custom monitoring solutions around IAMMETER devices.
 
 ------
 
-## 1. Example Application for IAMMETER-OpenApps
+# How to Run
 
-This dashboard is intentionally designed as a clean, minimal, and self-contained example:
-
-- Single HTML file (no backend required)
-- Clear separation between **Dashboard** and **Settings**
-- Uses IAMMETER local HTTP API directly
-- Easy to modify and extend
-
-It demonstrates how simple it is to build applications around IAMMETER devices.
-
-We encourage developers to use this as a starting point and submit their own IAMMETER-related open-source tools to the repository.
-
-------
-
-## 2. Real-Time Digital Display of Single-Phase Meter Data
-
-The application periodically polls:
-
-```
-http://<meter-ip>/api/monitorjson
-```
-
-It parses the returned JSON and displays the following 7 parameters:
-
-- Voltage (V)
-- Current (A)
-- Power (W)
-- Import Energy (kWh)
-- Export Energy (kWh)
-- Frequency (Hz)
-- Power Factor (PF)
-
-The UI follows an industrial monitoring style with large numeric values, suitable for:
-
-- Electrical rooms
-- Workshop monitoring
-- On-site maintenance
-- Wall-mounted dashboards
-- Quick visual inspection scenarios
-
-------
-
-## 3. Customizable Refresh Rate, Title and Logo
-
-From the **Settings** page, users can configure:
-
-### Meter Settings
-
-- Meter IP / Host
-- Refresh Interval (ms)
-
-### UI Customization
-
-- Custom Dashboard Title
-- Custom Logo/Icon
-
-The logo can be:
-
-- A relative image path (when hosted on a server)
-- OR automatically converted into a **64×64 base64 image**
-
-When uploading an image:
-
-- It is resized to 64×64
-- Compressed (WebP preferred, PNG fallback)
-- Optimized for localStorage size
-- Fully compatible with offline usage
-
-The logo is displayed on the **left side of the in-page title**, not the browser tab title.
-
-------
-
-## 4. No Server Required
-
-This application is fully frontend-based.
-
-You can run it in two ways:
-
-### Option A – Run Directly from Disk (Offline Mode)
+## Option A – Run Directly (No Server Required)
 
 Simply open:
 
-```
 index.html
-```
 
-No server installation required.
+No installation or server setup required.
 
-- Base64 logo works perfectly in `file://` mode.
-- Ideal for portable or offline usage.
+You can also use the hosted demo:
 
-Note:
- Browser security policies may restrict HTTP requests in some environments. For best stability, see Option B.
+https://iammeter.github.io/IAMMETER-OpenApps/apps/example/frontend/index.html
+
+Note: The meter IP must be in the same LAN and accessible from your browser.
 
 ------
 
-### Option B – Run on a Web Server
+## Option B – Host on a Web Server
 
-You can host the file on:
+You can host this file on:
 
 - Nginx
 - Apache
 - GitHub Pages
 - NAS
-- Router Web server
-- Or run locally:
+- Router web server
 
-```
+Or run locally:
+
 python -m http.server
-```
 
 Then open:
 
-```
 http://localhost:8000
-```
 
 ------
 
-## CORS Requirement
+# Why Static Apps Are Supported
 
-To fetch data directly from the browser, the IAMMETER device must return:
+IAMMETER energy meters enable **CORS by default**.
 
-```
-Access-Control-Allow-Origin: *
-```
+This allows:
 
-If this header is present, the dashboard will work without any proxy or backend service.
+- Direct browser-to-device HTTP API calls
+- Direct browser-to-IAMMETER-Cloud calls
+- Direct MQTT connections (via WebSocket brokers)
 
-------
+Because of this architecture, many IAMMETER applications can be built entirely as static web apps without requiring a backend server.
 
-## Quick Start
-
-1. Download or clone the repository
-2. Open `index.html`
-3. Go to **Settings**
-4. Enter your meter IP
-5. Click **Start**
-
-That’s it.
-
-------
-
-## Why This Matters
-
-IAMMETER is not just a hardware energy meter — it is a platform.
-
-This project shows how easily developers can:
-
-- Build monitoring dashboards
-- Create custom tools
-- Integrate IAMMETER into web systems
-- Develop vertical applications
-
-We welcome contributions to make IAMMETER-OpenApps a real **IAMMETER Application Center**.
-
-If you build something useful on top of IAMMETER, please submit a Pull Request.
+This significantly lowers development complexity and enables rapid prototyping.
