@@ -6,7 +6,7 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: write   # 允许自动提交 index.json
+  contents: read 
 
 jobs:
   validate:
@@ -29,14 +29,7 @@ jobs:
       - name: Generate apps index
         run: npm run generate:app-index
 
-      - name: Commit apps index (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add apps/index.json
-          git commit -m "chore: update apps index" || echo "No changes"
-          git push
+
 
   docker-build-hosted:
     runs-on: ubuntu-latest
